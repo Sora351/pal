@@ -1,0 +1,3 @@
+# This is the output log file.
+# It will contain results from the automation bot, including extracted email data.
+# Format: Input: [original_input_line] | EmailData: [extracted_data_or_error]

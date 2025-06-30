@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+  bot:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./input.txt:/usr/src/app/input.txt
+      - ./logs:/usr/src/app/logs
+      - ./config.json:/usr/src/app/config.json
+    restart: unless-stopped
+    # For Raspberry Pi, ensure you are using an ARM-compatible image in Dockerfile
+    # and that all dependencies are available for ARM architecture.
+    # Example: RUN apt-get update && apt-get install -y chromium-browser
+    # Ensure PUPPETEER_EXECUTABLE_PATH is set correctly in Dockerfile if needed.
+    # Consider adding user and group to avoid permission issues with mounted volumes.
+    # user: "node:node" # Or use UID/GID if preferred
+    environment:
+      - NODE_ENV=production # Or development, as needed
+      # Add any other environment variables your application might need
+    # If you need to install specific chromium dependencies for Raspberry Pi OS,
+    # you might need a custom Dockerfile base image or additional RUN commands.
+    # For example, for Debian/Ubuntu based ARM images:
+    # RUN apt-get update && apt-get install -yq gconf-service libasound2 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 \
+    # libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 \
+    # libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 \
+    # libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 \
+    # ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils wget --no-install-recommends
+    # ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+    # ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+    #
+    # For Alpine based ARM images (as in the current Dockerfile):
+    # RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefont
+    # ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+    # ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true

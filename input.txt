@@ -1,0 +1,7 @@
+# Example input - one item per line, format: text1:text2
+# Replace with your actual data
+
+user1login:user1password
+user2login:user2password
+test@example.com:SomeSecureP@ssw0rd
+anotherTest:anotherPassword123

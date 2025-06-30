@@ -1,0 +1,20 @@
+{
+  "inputFilePath": "input.txt",
+  "outputLogPath": "logs/output.log",
+  "targetUrl": "https://example.com/login",
+  "button1Selector": "",
+  "button2Selector": "",
+  "inputField1Selector": "#username",
+  "inputField2Selector": "#password",
+  "submitButtonSelector": "button[type='submit']",
+  "emailConfig": {
+    "email": "your-email@example.com",
+    "password": "your-email-password-or-app-password",
+    "imapHost": "imap.example.com",
+    "imapPort": 993,
+    "imapTls": true,
+    "subjectFilter": "",
+    "bodyKeywordFilter": "",
+    "extractionRegex": "Your confirmation code is: (\\d{6})"
+  }
+}

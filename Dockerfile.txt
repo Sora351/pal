@@ -1,0 +1,30 @@
+# Placeholder for Dockerfile content
+FROM node:18-alpine
+
+WORKDIR /usr/src/app
+
+# Install Puppeteer dependencies for Alpine
+# See https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md#running-puppeteer-in-docker
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    nodejs \
+    npm
+
+# Set Puppeteer environment variables
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD [ "node", "server.js" ]

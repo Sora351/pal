@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automation Control Panel</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --container-bg: #2a2a2a;
+            --input-bg: #3c3c3c;
+            --input-border: #555;
+            --input-text: #e0e0e0;
+            --button-bg: #007bff;
+            --button-text: white;
+            --button-hover-bg: #0056b3;
+            --button-stop-bg: #dc3545;
+            --button-stop-hover-bg: #c82333;
+            --button-reset-bg: #ffc107;
+            --button-reset-text: #212529;
+            --button-reset-hover-bg: #e0a800;
+            --section-border: #444;
+            --log-bg: #1a1a1a;
+            --log-border: #444;
+            --toast-bg: #424242;
+            --toast-text: #e0e0e0;
+            --shadow-color: rgba(0,0,0,0.5);
+
+            --status-running-bg: #28a745; /* Green */
+            --status-stopped-bg: #6c757d; /* Gray */
+            --status-error-bg: #dc3545;   /* Red */
+            --status-idle-bg: #17a2b8;    /* Teal */
+            --status-text-color: white;
+        }
+
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+        }
+        .container { 
+            max-width: 800px; 
+            margin: auto; 
+            background: var(--container-bg); 
+            padding: 20px; 
+            box-shadow: 0 0 10px var(--shadow-color);
+            border-radius: 8px;
+        }
+        h1, h2 { 
+            color: var(--text-color); 
+            border-bottom: 1px solid var(--section-border);
+            padding-bottom: 10px;
+        }
+        label { 
+            display: block; 
+            margin-top: 10px; 
+            font-weight: bold; 
+        }
+        input[type="text"], input[type="password"], input[type="url"], input[type="number"] {
+            width: calc(100% - 22px); 
+            padding: 10px; 
+            margin-top: 5px; 
+            border: 1px solid var(--input-border); 
+            border-radius: 4px;
+            background-color: var(--input-bg);
+            color: var(--input-text);
+        }
+        input[type="text"]:focus, input[type="password"]:focus, input[type="url"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: var(--button-bg);
+            box-shadow: 0 0 5px var(--button-bg);
+        }
+        button {
+            background-color: var(--button-bg); 
+            color: var(--button-text); 
+            padding: 10px 15px; 
+            border: none;
+            border-radius: 4px; 
+            cursor: pointer; 
+            margin-top: 20px; 
+            margin-right: 10px;
+            transition: background-color 0.2s ease-in-out;
+        }
+        button:hover { background-color: var(--button-hover-bg); }
+        button.stop { background-color: var(--button-stop-bg); }
+        button.stop:hover { background-color: var(--button-stop-hover-bg); }
+        button.reset { 
+            background-color: var(--button-reset-bg); 
+            color: var(--button-reset-text); 
+        }
+        button.reset:hover { background-color: var(--button-reset-hover-bg); }
+        .section { 
+            margin-bottom: 20px; 
+            padding: 15px; 
+            border: 1px solid var(--section-border); 
+            border-radius: 4px; 
+            background-color: var(--container-bg); /* Sections same as container or slightly different */
+        }
+        .section h2 { margin-top: 0; }
+        #progressDisplay { 
+            margin-top: 20px; 
+            font-style: italic; 
+            color: var(--text-color);
+        }
+        #logContainer {
+            margin-top: 20px; 
+            padding: 10px; 
+            border: 1px solid var(--log-border); 
+            height: 300px;
+            overflow-y: scroll; 
+            background-color: var(--log-bg); 
+            color: var(--text-color); /* Ensure log text is readable */
+            white-space: pre-wrap; 
+            font-family: monospace;
+            border-radius: 4px;
+        }
+        .status-indicator {
+            padding: 10px; 
+            margin-bottom: 15px; 
+            border-radius: 4px; 
+            color: var(--status-text-color); /* Common text color for statuses */
+            text-align: center;
+            font-weight: bold;
+        }
+        .status-running { background-color: var(--status-running-bg); }
+        .status-stopped { background-color: var(--status-stopped-bg); }
+        .status-error { background-color: var(--status-error-bg); }
+        .status-idle { background-color: var(--status-idle-bg); }
+        .hidden { display: none; }
+        .toast {
+            position: fixed; 
+            bottom: 20px; 
+            right: 20px; 
+            background-color: var(--toast-bg); 
+            color: var(--toast-text);
+            padding: 15px; 
+            border-radius: 5px; 
+            z-index: 1000; 
+            opacity: 0; 
+            transition: opacity 0.5s;
+            box-shadow: 0 2px 5px var(--shadow-color);
+        }
+        .toast.show { opacity: 1; }
+        fieldset {
+            border: 1px solid var(--section-border);
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        legend {
+            font-weight: bold;
+            padding: 0 10px;
+            color: var(--text-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Automation Control Panel</h1>
+
+        <div id="statusIndicator" class="status-indicator status-idle">Status: Idle</div>
+
+        <div class="section">
+            <h2>Configuration</h2>
+            <form id="configForm">
+                <fieldset>
+                    <legend>File Paths</legend>
+                    <label for="inputFilePath">Input File Path (.txt):</label>
+                    <input type="text" id="inputFilePath" name="inputFilePath" value="input.txt">
+
+                    <label for="outputLogPath">Output Log File Path:</label>
+                    <input type="text" id="outputLogPath" name="outputLogPath" value="logs/output.log">
+                </fieldset>
+
+                <fieldset>
+                    <legend>Target Website & Selectors</legend>
+                    <label for="targetUrl">Target Website URL:</label>
+                    <input type="url" id="targetUrl" name="targetUrl" placeholder="https://example.com" required>
+
+                    <label for="button1Selector">Button 1 Selector (CSS or XPath):</label>
+                    <input type="text" id="button1Selector" name="button1Selector" placeholder="#buttonOne or //button[@id='buttonOne']">
+
+                    <label for="button2Selector">Button 2 Selector (CSS or XPath):</label>
+                    <input type="text" id="button2Selector" name="button2Selector">
+
+                    <label for="inputField1Selector">Input Field 1 Selector:</label>
+                    <input type="text" id="inputField1Selector" name="inputField1Selector">
+
+                    <label for="inputField2Selector">Input Field 2 Selector:</label>
+                    <input type="text" id="inputField2Selector" name="inputField2Selector">
+
+                    <label for="submitButtonSelector">Submit Button Selector:</label>
+                    <input type="text" id="submitButtonSelector" name="submitButtonSelector">
+                </fieldset>
+
+                <fieldset>
+                    <legend>Email Access Configuration</legend>
+                    <label for="emailAddress">Email Address:</label>
+                    <input type="text" id="emailAddress" name="emailConfig.email">
+
+                    <label for="emailPassword">Password/App Password:</label>
+                    <input type="password" id="emailPassword" name="emailConfig.password">
+
+                    <label for="imapHost">IMAP Server Host:</label>
+                    <input type="text" id="imapHost" name="emailConfig.imapHost">
+
+                    <label for="imapPort">IMAP Server Port:</label>
+                    <input type="number" id="imapPort" name="emailConfig.imapPort" value="993">
+                    
+                    <label for="imapTls">Use TLS for IMAP (true/false):</label>
+                    <input type="text" id="imapTls" name="emailConfig.imapTls" value="true" title="Set to 'true' to use TLS for IMAP connection, 'false' otherwise. Most modern IMAP servers require TLS.">
+
+                    <label for="emailSubjectFilter" title="Optional. Only process emails containing this text in their subject. Case-insensitive.">Email Subject Filter (Optional):</label>
+                    <input type="text" id="emailSubjectFilter" name="emailConfig.subjectFilter" placeholder="e.g., Verification Code">
+
+                    <label for="emailBodyKeywordFilter" title="Optional. Only process emails containing this text in their body. Case-insensitive.">Email Body Keyword Filter (Optional):</label>
+                    <input type="text" id="emailBodyKeywordFilter" name="emailConfig.bodyKeywordFilter" placeholder="e.g., your account">
+
+                    <label for="extractionRegex" title="Required if email processing is needed. A RegEx to extract specific data from the email body (e.g., a code or link).">Extraction Pattern (RegEx):</label>
+                    <input type="text" id="extractionRegex" name="emailConfig.extractionRegex" placeholder="e.g., Your code is: (\d{6})">
+                </fieldset>
+
+                <button type="button" id="saveConfigBtn">Save Configuration</button>
+            </form>
+        </div>
+
+        <div class="section">
+            <h2>Controls</h2>
+            <button id="startBtn">Start</button>
+            <button id="stopBtn" class="stop">Stop</button>
+            <button id="resetBtn" class="reset">Reset Bot & Logs</button>
+        </div>
+
+        <div class="section">
+            <h2>Progress</h2>
+            <div id="progressDisplay">Idle</div>
+        </div>
+
+        <div class="section">
+            <h2>Realtime Logs</h2>
+            <div id="logContainer"></div>
+        </div>
+    </div>
+
+    <div id="toastNotification" class="toast"></div>
+
+    <script>
+        const configForm = document.getElementById('configForm');
+        const saveConfigBtn = document.getElementById('saveConfigBtn');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const progressDisplay = document.getElementById('progressDisplay');
+        const logContainer = document.getElementById('logContainer');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const toastNotification = document.getElementById('toastNotification');
+
+        let socket;
+
+        function showToast(message, duration = 3000) {
+            toastNotification.textContent = message;
+            toastNotification.classList.add('show');
+            setTimeout(() => {
+                toastNotification.classList.remove('show');
+            }, duration);
+        }
+
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            socket = new WebSocket(`${protocol}//${window.location.host}`);
+
+            socket.onopen = () => {
+                console.log('WebSocket connection established.');
+                showToast('Connected to server.');
+                // Request initial logs and status if needed
+                // socket.send(JSON.stringify({ type: 'get_initial_data' }));
+                fetchInitialLogs(); // Fetch logs on connect
+            };
+
+            socket.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                console.log('WebSocket message received:', message);
+
+                switch (message.type) {
+                    case 'log':
+                        logContainer.textContent += message.data;
+                        logContainer.scrollTop = logContainer.scrollHeight; // Auto-scroll
+                        break;
+                    case 'log_update':
+                        logContainer.textContent = message.data; // Replace all logs
+                        logContainer.scrollTop = logContainer.scrollHeight;
+                        break;
+                    case 'log_reset':
+                        logContainer.textContent = '';
+                        showToast(message.message || 'Logs have been reset.');
+                        break;
+                    case 'progress_init':
+                        progressDisplay.textContent = `Initialized. Total lines: ${message.data.totalLines}`;
+                        break;
+                    case 'progress_update':
+                        progressDisplay.textContent = `Processing line ${message.data.currentLine} of ${message.data.totalLines}: ${message.data.lineContent || ''}`;
+                        break;
+                    case 'status':
+                        updateStatusIndicator(message.data.status, message.data.message);
+                        if (message.data.status === 'idle' || message.data.status === 'error' || message.data.status === 'finished') {
+                             progressDisplay.textContent = message.data.message || `Status: ${message.data.status}`;
+                        }
+                        break;
+                    case 'status_detail': // More granular status updates from bot
+                        progressDisplay.textContent = message.data;
+                        break;
+                    case 'config_saved':
+                        showToast(message.message || 'Configuration saved!');
+                        break;
+                    case 'error':
+                        showToast(`Server Error: ${message.message}`, 5000);
+                        updateStatusIndicator('error', `Error: ${message.message}`);
+                        break;
+                    default:
+                        console.warn('Unknown WebSocket message type:', message.type);
+                }
+            };
+
+            socket.onclose = () => {
+                console.log('WebSocket connection closed. Attempting to reconnect...');
+                showToast('Connection lost. Attempting to reconnect...', 5000);
+                updateStatusIndicator('error', 'Disconnected from server. Trying to reconnect...');
+                setTimeout(connectWebSocket, 3000); // Try to reconnect after 3 seconds
+            };
+
+            socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                showToast('WebSocket connection error.', 5000);
+                // updateStatusIndicator('error', 'WebSocket connection error.');
+                // socket.close(); // This might trigger onclose which handles reconnection
+            };
+        }
+
+        function updateStatusIndicator(status, message = '') {
+            statusIndicator.className = 'status-indicator'; // Reset classes
+            let statusText = 'Status: ';
+            switch (status) {
+                case 'running':
+                    statusIndicator.classList.add('status-running');
+                    statusText += 'Running';
+                    break;
+                case 'stopping':
+                    statusIndicator.classList.add('status-stopped');
+                     statusText += 'Stopping...';
+                    break;
+                case 'idle':
+                    statusIndicator.classList.add('status-idle');
+                    statusText += 'Idle';
+                    break;
+                case 'error':
+                    statusIndicator.classList.add('status-error');
+                    statusText += 'Error';
+                    break;
+                default:
+                    statusIndicator.classList.add('status-idle');
+                    statusText += 'Unknown';
+            }
+            statusIndicator.textContent = message || statusText;
+        }
+
+
+        async function fetchInitialLogs() {
+            try {
+                const response = await fetch('/api/logs');
+                if (response.ok) {
+                    const logs = await response.text();
+                    logContainer.textContent = logs;
+                    logContainer.scrollTop = logContainer.scrollHeight;
+                } else {
+                    console.error('Failed to fetch initial logs:', response.statusText);
+                    logContainer.textContent = 'Failed to load logs.';
+                }
+            } catch (error) {
+                console.error('Error fetching initial logs:', error);
+                logContainer.textContent = 'Error loading logs.';
+            }
+        }
+
+        // Load existing configuration on page load
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const config = await response.json();
+                if (config) {
+                    Object.keys(config).forEach(key => {
+                        if (key === 'emailConfig') {
+                            Object.keys(config.emailConfig).forEach(emailKey => {
+                                const input = document.querySelector(`[name="emailConfig.${emailKey}"]`);
+                                if (input) input.value = config.emailConfig[emailKey];
+                            });
+                        } else {
+                            const input = document.getElementById(key);
+                            if (input) input.value = config[key];
+                        }
+                    });
+                    showToast('Configuration loaded.');
+                }
+            } catch (error) {
+                console.error('Error loading config:', error);
+                showToast('Failed to load existing configuration.', 4000);
+            }
+        }
+
+        saveConfigBtn.addEventListener('click', async () => {
+            const formData = new FormData(configForm);
+            const config = {};
+            // Handling nested emailConfig
+            config.emailConfig = {};
+
+            formData.forEach((value, key) => {
+                if (key.startsWith('emailConfig.')) {
+                    const emailKey = key.substring('emailConfig.'.length);
+                    // Convert 'true'/'false' strings to booleans for imapTls
+                    if (emailKey === 'imapTls') {
+                        config.emailConfig[emailKey] = (value.toLowerCase() === 'true');
+                    } else if (emailKey === 'imapPort') {
+                        config.emailConfig[emailKey] = parseInt(value, 10);
+                    }
+                    else {
+                        config.emailConfig[emailKey] = value;
+                    }
+                } else {
+                    config[key] = value;
+                }
+            });
+            
+            // Ensure emailConfig is not empty if no email fields were filled.
+            if (Object.keys(config.emailConfig).length === 0) {
+                delete config.emailConfig; // Remove it if it's empty
+            } else {
+                 // Ensure imapPort is a number
+                if (config.emailConfig.imapPort && typeof config.emailConfig.imapPort === 'string') {
+                    config.emailConfig.imapPort = parseInt(config.emailConfig.imapPort, 10);
+                }
+                 // Ensure imapTls is boolean
+                if (config.emailConfig.hasOwnProperty('imapTls') && typeof config.emailConfig.imapTls === 'string') {
+                    config.emailConfig.imapTls = (config.emailConfig.imapTls.toLowerCase() === 'true');
+                } else if (!config.emailConfig.hasOwnProperty('imapTls')) {
+                    config.emailConfig.imapTls = true; // Default if not present
+                }
+            }
+
+
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                const result = await response.json();
+                showToast(result.message || 'Configuration saved!');
+            } catch (error) {
+                console.error('Error saving config:', error);
+                showToast('Error saving configuration.', 4000);
+            }
+        });
+
+        startBtn.addEventListener('click', async () => {
+            try {
+                progressDisplay.textContent = 'Attempting to start bot...';
+                updateStatusIndicator('running', 'Bot starting...');
+                const response = await fetch('/api/start', { method: 'POST' });
+                const result = await response.json();
+                if (!response.ok) {
+                     showToast(`Error: ${result.message}`, 4000);
+                     updateStatusIndicator('error', result.message || 'Failed to start bot.');
+                } else {
+                    showToast(result.message || 'Start command sent.');
+                }
+            } catch (error) {
+                console.error('Error starting bot:', error);
+                showToast('Error sending start command.', 4000);
+                updateStatusIndicator('error', 'Error sending start command.');
+            }
+        });
+
+        stopBtn.addEventListener('click', async () => {
+            try {
+                updateStatusIndicator('stopping', 'Bot stop requested...');
+                const response = await fetch('/api/stop', { method: 'POST' });
+                const result = await response.json();
+                 showToast(result.message || 'Stop command sent.');
+            } catch (error) {
+                console.error('Error stopping bot:', error);
+                showToast('Error sending stop command.', 4000);
+            }
+        });
+
+        resetBtn.addEventListener('click', async () => {
+            if (confirm('Are you sure you want to reset the bot and clear all logs? This cannot be undone.')) {
+                try {
+                    updateStatusIndicator('idle', 'Resetting bot...');
+                    const response = await fetch('/api/reset', { method: 'POST' });
+                    const result = await response.json();
+                    showToast(result.message || 'Reset command sent.');
+                    progressDisplay.textContent = 'Bot reset. Idle.';
+                    logContainer.textContent = ''; // Clear logs on client side immediately
+                } catch (error) {
+                    console.error('Error resetting bot:', error);
+                    showToast('Error sending reset command.', 4000);
+                }
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            connectWebSocket();
+            updateStatusIndicator('idle', 'Panel Loaded. Waiting for connection.');
+        });
+    </script>
+</body>
+</html>
